@@ -1,0 +1,1149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Veto: a UPI payments app concept that blocks overspending. Interactive case study."><title>Veto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: narrator column (left) + live device (right); stacks device-first on phones. Tour dims everything but the device and the tour card. Dark-only by choice, matching the app. */
+:root {
+  --bg: #120D0B;
+  --panel: #1A1210;
+  --surface: #1E1612;
+  --surface-2: #2A1D17;
+  --surface-3: #36261E;
+  --line: #3F2C22;
+  --line-2: #5A4337;
+  --fg: #F3DED3;
+  --muted: #C2AB9E;
+  --faint: #A08A7E;
+  --accent: #FFB68A;
+  --accent-ink: #522300;
+  --accent-deep: #723600;
+  --accent-mid: #4A2A18;
+  --accent-soft: #FFDBC8;
+  --paper: #F3ECE4;
+  --paper-ink: #1D1B1A;
+  --stamp: #B23A12;
+  --font-display: 'Bricolage Grotesque', 'Manrope', system-ui, sans-serif;
+  --font-body: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.55; padding-inline: 0; padding-block: 0; }
+a { color: var(--accent); }
+a:hover { color: var(--accent-soft); }
+button { font-family: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.mono { font-family: var(--font-mono); }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+[hidden] { display: none !important; }
+
+/* ===== shell ===== */
+.shell { min-height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(420px, 44%); }
+.left { padding: 36px clamp(20px, 5vw, 72px) 36px; display: flex; flex-direction: column; gap: 28px; min-width: 0; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.wordmark { font-family: var(--font-display); font-weight: 800; font-size: 20px; letter-spacing: -0.02em; }
+.linkbtn { background: none; border: 0; color: var(--accent); font: 600 14px var(--font-body); padding: 8px 0; }
+.linkbtn:hover { color: var(--accent-soft); }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(44px, 5.4vw, 76px); line-height: 0.95; letter-spacing: -0.04em; margin: 0; text-wrap: balance; }
+.lede { margin: 0; max-width: 34em; font-size: 18px; color: var(--muted); }
+.intro { display: flex; flex-direction: column; gap: 18px; margin-top: clamp(8px, 6vh, 64px); }
+.narrator { background: var(--surface); border-radius: 24px; padding: 22px 26px; max-width: 560px; display: flex; flex-direction: column; gap: 10px; }
+.narrator .head { display: flex; justify-content: space-between; gap: 12px; }
+.narrator h2 { margin: 0; font-family: var(--font-display); font-size: 26px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+.narrator p { margin: 0; max-width: 46ch; }
+.narrator .try { color: var(--muted); font-size: 15px; }
+.narrator .try b { color: var(--fg); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; max-width: 560px; }
+.chip { padding: 9px 15px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); font: 600 13px var(--font-body); }
+.chip:hover { color: var(--fg); border-color: var(--line-2); }
+.chip.on { background: var(--accent-deep); border-color: var(--accent-deep); color: var(--accent-soft); }
+.cta { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-top: auto; }
+.btn { height: 52px; padding: 0 26px; border: 0; border-radius: 26px; background: var(--accent); color: var(--accent-ink); font: 800 15px var(--font-body); }
+.btn.ghost { background: transparent; border: 1px solid var(--line-2); color: var(--fg); font-weight: 600; }
+.reset { color: var(--muted); font-size: 14px; }
+
+.right { background: var(--panel); border-left: 1px solid var(--surface-2); display: flex; align-items: center; justify-content: center; padding: 24px 16px; min-width: 0; position: relative; }
+.device-wrap { position: relative; }
+.device { width: 376px; height: 776px; border: 8px solid #2B211C; border-radius: 54px; background: #1A1210; box-shadow: 0 40px 80px rgba(0,0,0,0.55); overflow: hidden; transform-origin: top left; position: absolute; left: 0; top: 0; }
+
+/* ===== tour ===== */
+.tour-dim { position: fixed; inset: 0; background: rgba(6, 4, 3, 0.74); z-index: 40; }
+.tour-on .right { z-index: 50; background: transparent; border-color: transparent; }
+.tour-on .tourcard { position: relative; z-index: 50; }
+.tourcard { background: var(--surface); border-radius: 24px; padding: 24px 26px; max-width: 520px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+.tourcard h2 { margin: 0; font-family: var(--font-display); font-size: 30px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; }
+.tourcard p { margin: 0; max-width: 44ch; }
+.tour-progress { display: flex; gap: 4px; }
+.tour-progress i { width: 18px; height: 4px; border-radius: 2px; background: var(--line); display: block; }
+.tour-progress i.on { background: var(--accent); }
+.tour-actions { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+.tour-actions .group { display: flex; gap: 8px; }
+.tour-actions button { height: 44px; padding: 0 20px; border-radius: 22px; font: 700 14px var(--font-body); }
+.tb-next { border: 0; background: var(--accent); color: var(--accent-ink); }
+.tb-back { border: 1px solid var(--line-2); background: transparent; color: var(--fg); }
+.tb-exit { border: 0; background: transparent; color: var(--muted); padding: 0 4px !important; }
+.spot { position: absolute; border-radius: 18px; box-shadow: 0 0 0 3px var(--accent), 0 0 24px rgba(255,182,138,0.35); pointer-events: none; z-index: 30; transition: all 0.35s ease; }
+@media (prefers-reduced-motion: reduce) { .spot { transition: none; } }
+
+/* ===== phone screens ===== */
+.scr { position: absolute; inset: 0; padding: 20px 16px 18px; display: flex; flex-direction: column; gap: 10px; color: #F3DED3; font-family: var(--font-body); transition: filter 0.8s ease; overflow: hidden; }
+@media (prefers-reduced-motion: reduce) { .scr { transition: none; } }
+.scr button { color: inherit; }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.cap { font-size: 12px; color: #D8C2B6; font-weight: 500; }
+.hdr { font-weight: 800; font-size: 17px; }
+.back { background: none; border: 0; padding: 6px 0; font: 600 13px var(--font-body); color: #D8C2B6 !important; }
+.chip-s { height: 26px; padding: 0 10px; border-radius: 13px; background: var(--accent-mid); color: var(--accent-soft); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+.big { font-size: 64px; font-weight: 800; letter-spacing: -0.05em; line-height: 0.95; font-variant-numeric: tabular-nums; }
+.bigrow { display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; }
+.sticker { display: inline-block; padding: 5px 9px; border-radius: 10px; background: var(--accent-deep); color: var(--accent-soft); font-size: 12px; font-weight: 800; line-height: 1.2; transform: rotate(-5deg); margin-bottom: 8px; max-width: 150px; }
+.bar { display: flex; gap: 3px; height: 10px; }
+.bar span { border-radius: 5px; display: block; }
+.msg { margin: 0; font-size: 14px; line-height: 1.45; }
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.cards.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pc { background: var(--surface-2); border-radius: 18px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; font-size: 11px; }
+.pc b { font-size: 17px; font-weight: 800; letter-spacing: -0.02em; }
+.pc.strong { background: var(--accent-deep); color: var(--accent-soft); }
+.pc.soft { background: var(--accent-mid); color: var(--accent-soft); }
+.pending { width: 100%; text-align: left; background: var(--accent-deep); color: var(--accent-soft) !important; border: 0; border-radius: 18px; padding: 8px 8px 8px 10px; display: flex; align-items: center; gap: 8px; font: 600 13px var(--font-body); }
+.avatar { width: 30px; height: 30px; border-radius: 15px; background: var(--accent-soft); color: var(--accent-ink); display: grid; place-items: center; font-weight: 800; font-size: 13px; flex-shrink: 0; }
+.pill { height: 32px; padding: 0 12px; border-radius: 16px; background: var(--accent-soft); color: var(--accent-ink); font-weight: 800; font-size: 12px; display: grid; place-items: center; }
+.dock { margin-top: auto; display: flex; justify-content: space-between; align-items: center; }
+.dockcol { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 66px; font-size: 11px; font-weight: 600; color: #D8C2B6; }
+.fab { width: 60px; height: 60px; border-radius: 22px; border: 0; background: var(--accent); display: grid; place-items: center; box-shadow: 0 8px 18px rgba(0,0,0,0.45); }
+.fab.small { width: 54px; height: 54px; border-radius: 18px; background: var(--accent-deep); }
+.dial { width: 132px; height: 132px; border: 0; background: none; padding: 0; position: relative; display: grid; place-items: center; }
+.dial::before { content: ""; position: absolute; inset: 14px; border-radius: 50%; border: 3px dotted var(--line-2); }
+.dial .knob { width: 78px; height: 78px; border-radius: 50%; background: var(--surface-3); border: 1px solid var(--line-2); box-shadow: 0 8px 18px rgba(0,0,0,0.5); position: relative; transition: transform 0.4s ease; }
+.dial .knob::after { content: ""; position: absolute; left: 50%; top: 7px; width: 6px; height: 15px; margin-left: -3px; border-radius: 3px; background: var(--accent); }
+.dial .lbl { position: absolute; font-size: 10px; font-weight: 700; color: var(--faint); }
+.dial .lbl.on { color: var(--accent); }
+.pbtn { height: 48px; border-radius: 24px; border: 0; font: 800 14px var(--font-body); width: 100%; display: grid; place-items: center; }
+.pbtn.primary { background: var(--accent); color: var(--accent-ink) !important; }
+.pbtn.ghost { background: transparent; border: 1px solid var(--line-2); }
+.pbtn:disabled { opacity: 0.45; cursor: not-allowed; }
+.stack { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
+.list { background: var(--surface-2); border-radius: 18px; padding: 2px 12px; font-size: 13px; }
+.list > div { display: flex; justify-content: space-between; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.list > div:last-child { border-bottom: 0; }
+.tag { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 8px; background: var(--accent-mid); color: var(--accent-soft); }
+.opts { display: flex; flex-direction: column; gap: 8px; }
+.opt { width: 100%; text-align: left; padding: 13px 14px; border-radius: 16px; border: 1px solid var(--line-2); background: transparent; font: 600 14px var(--font-body); }
+.opt.on { background: var(--accent-deep); border-color: var(--accent-deep); color: var(--accent-soft) !important; }
+.ans { display: flex; flex-wrap: wrap; gap: 6px; }
+.ans button { padding: 9px 13px; border-radius: 12px; border: 1px solid var(--line-2); background: transparent; font: 600 13px var(--font-body); }
+.ans button.on { background: var(--accent-deep); border-color: var(--accent-deep); color: var(--accent-soft) !important; }
+.dots { display: flex; gap: 5px; }
+.dots i { width: 22px; height: 4px; border-radius: 2px; background: var(--line); display: block; }
+.dots i.on { background: var(--accent); }
+.qtext { font-size: 23px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
+.typed { background: var(--surface-2); border: 1px solid var(--line-2); border-radius: 12px; padding: 12px; color: var(--fg); font: 600 14px var(--font-body); width: 100%; }
+.slide { -webkit-appearance: none; appearance: none; width: 100%; height: 50px; border-radius: 25px; background: var(--accent-mid); outline: none; }
+.slide::-webkit-slider-thumb { -webkit-appearance: none; width: 50px; height: 50px; border-radius: 25px; background: var(--accent); cursor: grab; }
+.slide::-moz-range-thumb { width: 50px; height: 50px; border-radius: 25px; background: var(--accent); border: 0; cursor: grab; }
+.slidelabel { text-align: center; font-size: 12px; color: #D8C2B6; margin-top: -4px; }
+.qr { height: 150px; border-radius: 22px; background: #0F0B09; position: relative; display: grid; place-items: center; color: var(--faint); font-size: 12px; }
+.qr::before, .qr::after { content: ""; position: absolute; width: 36px; height: 36px; border: 3px solid var(--accent); }
+.qr::before { left: 22px; top: 22px; border-right: 0; border-bottom: 0; border-radius: 8px 0 0 0; }
+.qr::after { right: 22px; bottom: 22px; border-left: 0; border-top: 0; border-radius: 0 0 8px 0; }
+.merchant { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); text-align: left; font: 600 14px var(--font-body); }
+.merchant small { display: block; color: #D8C2B6; font-weight: 500; font-size: 11px; }
+.merchant .amt { margin-left: auto; font-weight: 800; }
+.rollwrap { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 6px 0; }
+.pointer { width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 16px solid var(--accent); position: relative; z-index: 2; margin-bottom: -6px; }
+.wheel { width: 170px; height: 170px; border-radius: 50%; position: relative; background: conic-gradient(var(--accent-deep) 0 50%, var(--surface-3) 50% 100%); border: 1px solid var(--line-2); transition: transform 2.2s cubic-bezier(0.15, 0.8, 0.2, 1); }
+@media (prefers-reduced-motion: reduce) { .wheel { transition: none; } }
+.wheel span { position: absolute; top: 50%; font-weight: 800; font-size: 12px; letter-spacing: 0.06em; }
+.wheel .a { left: 50%; transform: translate(14px, -50%); color: var(--accent-soft); }
+.wheel .b { right: 50%; transform: translate(-14px, -50%); color: #D8C2B6; }
+.wheel .hub { position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; background: #1A1210; border: 1px solid var(--line-2); }
+.odds { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+.holdbtn { position: relative; overflow: hidden; }
+.holdbtn .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: rgba(255,182,138,0.22); }
+.holdbtn.holding .fill { width: 100%; transition: width 1.2s linear; }
+.holdbtn span { position: relative; }
+.pin { display: flex; gap: 12px; justify-content: center; margin: 24px 0; }
+.pin i { width: 14px; height: 14px; border-radius: 7px; border: 2px solid var(--line-2); display: block; }
+.pin i.on { background: var(--accent); border-color: var(--accent); }
+.toast { position: absolute; left: 12px; right: 12px; top: 12px; background: var(--accent-soft); color: var(--accent-ink); border-radius: 16px; padding: 10px 14px; font-weight: 700; font-size: 13px; z-index: 5; box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
+.keys { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.keys button { height: 46px; border-radius: 23px; border: 0; background: var(--surface-3); font: 700 18px var(--font-body); }
+.seg { display: flex; border: 1px solid var(--faint); border-radius: 16px; overflow: hidden; height: 32px; font-size: 12px; font-weight: 700; }
+.seg span { flex: 1; display: grid; place-items: center; }
+.seg span + span { border-left: 1px solid var(--faint); color: #D8C2B6; }
+.seg .on { background: var(--accent-deep); color: var(--accent-soft); }
+.receipt { background: var(--paper); color: var(--paper-ink); font-family: var(--font-mono); font-size: 11px; line-height: 1.45; padding: 14px 12px; display: flex; flex-direction: column; gap: 9px; position: relative; }
+.receipt .cl { display: flex; gap: 7px; }
+.receipt .bx { width: 12px; height: 12px; border: 1.5px solid var(--paper-ink); flex-shrink: 0; margin-top: 2px; display: grid; place-items: center; font-size: 9px; }
+.stamp { position: absolute; font-family: var(--font-body); font-weight: 800; font-size: 11px; letter-spacing: 0.06em; color: var(--stamp); border: 2px solid var(--stamp); padding: 2px 6px; border-radius: 4px; background: rgba(243,236,228,0.75); }
+.stamp.kept { color: #2F6B3A; border-color: #2F6B3A; }
+.story { position: absolute; inset: 0; padding: 20px 18px; display: flex; flex-direction: column; gap: 12px; border: 0; background: transparent; text-align: left; font-family: var(--font-body); }
+.story .title { font-family: var(--font-display); font-weight: 800; font-size: 40px; line-height: 0.95; letter-spacing: -0.03em; color: var(--accent); }
+.story .hugenum { font-size: 72px; font-weight: 800; letter-spacing: -0.05em; line-height: 0.9; }
+
+/* ===== under the hood ===== */
+.hood { max-width: 1040px; margin: 0 auto; padding: 36px 20px 80px; display: flex; flex-direction: column; gap: 56px; }
+.hood h1 { font-size: clamp(40px, 6vw, 68px); }
+.hood h2 { font-family: var(--font-display); font-weight: 800; font-size: clamp(28px, 3.6vw, 40px); letter-spacing: -0.02em; line-height: 1.05; margin: 0; }
+.hood section { display: flex; flex-direction: column; gap: 18px; }
+.hood p { margin: 0; max-width: 64ch; color: var(--muted); }
+.hood .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.hood .card { background: var(--surface); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.hood .card h3 { margin: 0; font-size: 18px; font-weight: 800; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 16px; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 620px; }
+th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; background: var(--surface); }
+tr:last-child td { border-bottom: 0; }
+.formula { font-family: var(--font-mono); background: var(--surface); border-radius: 16px; padding: 18px 20px; overflow-x: auto; white-space: pre; font-size: 14px; line-height: 1.7; }
+.mermaid-wrap { overflow-x: auto; background: var(--paper); color: var(--paper-ink); border-radius: 20px; padding: 20px; }
+
+/* ===== motion ===== */
+.view { display: contents; }
+.boot { position: absolute; inset: 0; z-index: 20; background: #1A1210; display: grid; place-items: center; pointer-events: none; }
+.boot span { font-family: var(--font-display); font-weight: 800; font-size: 48px; letter-spacing: -0.04em; color: var(--accent); }
+.boot small { display: block; text-align: center; font: 600 11px var(--font-mono); letter-spacing: 0.1em; color: var(--faint); margin-top: 6px; }
+@media (prefers-reduced-motion: reduce) { .boot { display: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .left > .top, .left > .intro, .sheet > * { animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  .left > .intro { animation-delay: 0.08s; }
+  .sheet > .narrator { animation-delay: 0.22s; }
+  .sheet > .chips { animation-delay: 0.34s; }
+  .sheet > .cta { animation-delay: 0.44s; }
+  .device-wrap { animation: deviceIn 1s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s both; }
+  .device-wrap.shake { animation: shake 0.45s ease; }
+  .boot { animation: bootOut 0.45s ease 1.25s forwards; }
+  .boot span { animation: pop 0.6s cubic-bezier(0.3, 1.5, 0.5, 1) 0.45s both; }
+  .boot small { animation: rise 0.5s ease 0.75s both; }
+  .view > * { animation-duration: 0.45s; animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); animation-fill-mode: both; animation-delay: calc(var(--base, 0s) + var(--i, 0) * 35ms); }
+  .view.in-fwd > * { animation-name: inRight; }
+  .view.in-back > * { animation-name: inLeft; }
+  .view.in-up > * { animation-name: inUp; }
+  .view.in-fade > * { animation-name: inFade; }
+  .view.in-fwd .bar span, .view.in-back .bar span, .view.in-fade .bar span { animation: growX 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: calc(var(--base, 0s) + 0.2s); transform-origin: left center; }
+  .stampin { animation: stamp 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) 0.18s both; }
+  .pop { animation: pop 0.55s cubic-bezier(0.3, 1.6, 0.5, 1) 0.1s both; }
+  .toast { animation: toastIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .narrator.swap > *, .tourcard.swap > * { animation: rise 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  .narrator.swap > *:nth-child(2), .tourcard.swap > *:nth-child(2) { animation-delay: 0.04s; }
+  .narrator.swap > *:nth-child(3), .tourcard.swap > *:nth-child(3) { animation-delay: 0.08s; }
+  .narrator.swap > *:nth-child(4), .tourcard.swap > *:nth-child(4) { animation-delay: 0.12s; }
+  .chip { transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease; }
+  .fab, .pbtn, .opt, .merchant, .keys button, .ans button { transition: transform 0.12s ease; }
+  .fab:active, .pbtn:active, .opt:active, .merchant:active, .keys button:active, .ans button:active { transform: scale(0.96); }
+  .dial:active .knob { transform: scale(0.95); }
+}
+@keyframes rise { from { opacity: 0; transform: translateY(16px); } }
+@keyframes deviceIn { from { opacity: 0; transform: translateY(70px) rotate(-3deg); } }
+@keyframes bootOut { to { opacity: 0; visibility: hidden; } }
+@keyframes inRight { from { opacity: 0; transform: translateX(30px); } }
+@keyframes inLeft { from { opacity: 0; transform: translateX(-30px); } }
+@keyframes inUp { from { opacity: 0; transform: translateY(46px); } }
+@keyframes inFade { from { opacity: 0; transform: scale(0.97); } }
+@keyframes growX { from { transform: scaleX(0); } }
+@keyframes stamp { from { opacity: 0; transform: scale(1.7) rotate(-10deg); } }
+@keyframes pop { from { opacity: 0; transform: scale(0.4); } }
+@keyframes toastIn { from { opacity: 0; transform: translateY(-18px); } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-9px) rotate(-1deg); } 40% { transform: translateX(8px) rotate(1deg); } 60% { transform: translateX(-5px); } 80% { transform: translateX(3px); } }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .right { order: -1; border-left: 0; border-bottom: 1px solid var(--surface-2); }
+  .left { padding-top: 24px; }
+  .intro { margin-top: 0; }
+  .hood .grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ===== shared helpers ===== */
+.sheet { display: contents; }
+.brandblock { display: flex; flex-direction: column; }
+.tagline { display: none; }
+.topactions { display: flex; gap: 16px; align-items: center; }
+.mobile-only { display: none; }
+.sheet-toggle { background: var(--surface-3); border: 0; border-radius: 14px; height: 30px; padding: 0 12px; color: var(--fg); font: 700 12px var(--font-body); }
+
+/* ===== phones: the visitor's own screen becomes the app ===== */
+@media (max-width: 700px) {
+  .mobile-only { display: inline; }
+  button.mobile-only { display: inline-flex; align-items: center; }
+  .desk-only { display: none; }
+  .shell { display: flex; flex-direction: column; height: 100vh; height: 100dvh; min-height: 0; }
+  .left { display: contents; }
+  .top { order: 0; padding: 10px 16px 6px; }
+  .wordmark { font-size: 19px; line-height: 1.1; }
+  .tagline { display: block; font-size: 12px; color: var(--muted); }
+  .intro { display: none; }
+  .right { order: 1; flex: 1; min-height: 0; padding: 4px 12px calc(var(--sheet-h, 110px) + 8px); border: 0; background: var(--bg); display: block; }
+  .device-wrap { width: 100% !important; height: 100% !important; }
+  .device { position: absolute; inset: 0; width: 100%; height: 100%; transform: none !important; border: 1px solid var(--surface-2); border-radius: 28px; box-shadow: none; }
+  .scr { overflow-y: auto; overscroll-behavior: contain; padding: 16px 14px 14px; }
+  .big { font-size: 56px; }
+  .sheet { display: flex; flex-direction: column; gap: 10px; order: 2; position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; background: var(--surface); border-radius: 22px 22px 0 0; padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -12px 30px rgba(0,0,0,0.45); max-height: 70vh; overflow-y: auto; }
+  .narrator { background: transparent; padding: 0; gap: 4px; max-width: none; }
+  .narrator .head { align-items: center; }
+  .narrator h2 { font-size: 19px; }
+  .narrator p { font-size: 14px; }
+  .shell:not(.sheet-open) #n-body { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .shell:not(.sheet-open) #n-try, .shell:not(.sheet-open) .chips, .shell:not(.sheet-open) .cta { display: none !important; }
+  .chips { flex-wrap: nowrap; overflow-x: auto; max-width: none; padding-bottom: 2px; }
+  .chip { white-space: nowrap; flex-shrink: 0; padding: 8px 13px; }
+  .cta { margin-top: 0; }
+  .btn { height: 44px; padding: 0 20px; font-size: 14px; }
+  .tourcard { background: transparent; padding: 0; box-shadow: none; max-width: none; gap: 8px; }
+  .tourcard h2 { font-size: 21px; }
+  .tourcard p { font-size: 14px; }
+  .tour-actions button { height: 40px; padding: 0 16px; }
+  .tour-on .sheet { z-index: 50; }
+}
+</style>
+</head>
+<body>
+
+
+<div id="app-view">
+  <div class="shell" id="shell">
+    <div class="left">
+      <div class="top">
+        <span class="brandblock"><span class="wordmark">Veto</span><span class="tagline">A UPI app that can say no.</span></span>
+        <span class="topactions">
+          <button type="button" class="linkbtn mobile-only" id="start-tour-m">Tour</button>
+          <button type="button" class="linkbtn" id="to-hood"><span class="desk-only">Under the hood →</span><span class="mobile-only">How it works</span></button>
+        </span>
+      </div>
+      <div class="intro" id="intro">
+        <h1>A UPI app that can say no.</h1>
+        <p class="lede">Veto tracks everything you spend, blocks payments when you hit your limit, and notices when you pay somewhere else.</p>
+      </div>
+
+      <div class="sheet" id="sheet">
+      <div class="narrator" id="narrator" aria-live="polite">
+        <div class="head"><span class="eyebrow" id="n-eyebrow">You're on · Home</span><button type="button" class="sheet-toggle mobile-only" id="sheet-toggle" aria-expanded="false">More</button></div>
+        <h2 id="n-title">Home</h2>
+        <p id="n-body"></p>
+        <p class="try" id="n-try"></p>
+      </div>
+
+      <div class="tourcard" id="tourcard" hidden aria-live="polite">
+        <div class="row" style="color: var(--fg)"><span class="eyebrow" id="t-step">Step 1 of 7</span><div class="tour-progress" id="t-prog"></div></div>
+        <h2 id="t-title"></h2>
+        <p id="t-body"></p>
+        <div class="tour-actions">
+          <button type="button" class="tb-exit" id="t-exit">Exit tour</button>
+          <div class="group">
+            <button type="button" class="tb-back" id="t-back">Back</button>
+            <button type="button" class="tb-next" id="t-next">Next</button>
+          </div>
+        </div>
+      </div>
+
+      <nav class="chips" id="chips" aria-label="Jump to a part of the app">
+        <button type="button" class="chip on" data-jump="home">Home</button>
+        <button type="button" class="chip" data-jump="scan">Pay</button>
+        <button type="button" class="chip" data-jump="roll">The roll</button>
+        <button type="button" class="chip" data-jump="blocked">Blocked</button>
+        <button type="button" class="chip" data-jump="caught">Caught</button>
+        <button type="button" class="chip" data-jump="confess">Confess</button>
+        <button type="button" class="chip" data-jump="recap">The month</button>
+        <button type="button" class="chip" data-jump="me">The contract</button>
+      </nav>
+
+      <div class="cta" id="cta">
+        <button type="button" class="btn" id="start-tour">Show me around</button>
+        <button type="button" class="linkbtn reset" id="reset">Reset the phone</button>
+      </div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="device-wrap" id="device-wrap">
+        <div class="device" id="device">
+          <div class="scr" id="scr"></div>
+          <div class="boot" id="boot" aria-hidden="true"><div><span>Veto</span><small>CHECKING YOUR SPENDING…</small></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="tour-dim" id="tour-dim" hidden></div>
+</div>
+
+<div id="hood-view" hidden>
+  <div class="hood">
+    <div class="top">
+      <span class="wordmark">Veto</span>
+      <button type="button" class="linkbtn" id="to-app">← Back to the phone</button>
+    </div>
+
+    <section>
+      <span class="eyebrow">Under the hood</span>
+      <h1>How it knows what you spent.</h1>
+      <p>A block only works inside the app. People can always open another payment app, so the product has to see every rupee that leaves your accounts, decide what it was, and react fairly. About forty rules handle that. These are the main ones.</p>
+    </section>
+
+    <section>
+      <h2>Where the data comes from</h2>
+      <div class="grid">
+        <div class="card"><h3>Bank SMS</h3><p>Android only. Arrives within seconds and usually carries the UPI reference number and the payee's UPI ID. This is what makes real-time catches possible.</p></div>
+        <div class="card"><h3>Account Aggregator</h3><p>RBI's consent-based framework for reading bank data. Slower, often hours, but complete. It's the main source on iPhone, which has no SMS access.</p></div>
+        <div class="card"><h3>Email</h3><p>Optional. Mostly for credit card alerts and monthly statements, which close any gaps at month end.</p></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>From a debit to a decision</h2>
+      <p>Every debit is matched against payments made in the app using the UPI reference number. Duplicates from SMS, email and bank data collapse into one. Whatever is left was paid somewhere else, and gets classified.</p>
+      <div class="mermaid-wrap">
+<pre class="mermaid">
+flowchart LR
+  A[SMS / email / Account Aggregator] --> B[Match by UPI reference, remove duplicates]
+  B --> C{Paid in the app?}
+  C -->|yes| D[Already counted]
+  C -->|no| E[Classify]
+  E --> F[Self-transfer, investment, card bill: not spend]
+  E --> G[Essential: counts, never judged]
+  E --> H{Over budget at the time?}
+  H -->|no| I[Counts quietly]
+  H -->|merchant| J[Caught]
+  H -->|person or wallet| K[Ask first]
+</pre>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Classified as</th><th>Counts to budget</th><th>Can be roasted</th></tr></thead>
+          <tbody>
+            <tr><td>Transfer to your own account</td><td>No</td><td>No</td></tr>
+            <tr><td>Investment (SIP, FD, stocks)</td><td>No</td><td>No</td></tr>
+            <tr><td>Credit card bill payment</td><td>No (counted at the swipe)</td><td>No</td></tr>
+            <tr><td>Essential (medical, rent, school, bills)</td><td>Yes</td><td>Never</td></tr>
+            <tr><td>Merchant paid elsewhere</td><td>Yes</td><td>Yes, when over budget</td></tr>
+            <tr><td>Payment to a person</td><td>Yes</td><td>Only after you answer</td></tr>
+            <tr><td>ATM withdrawal</td><td>Yes, at withdrawal</td><td>Yes, when over budget</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Essentials without merchant codes</h2>
+      <p>Merchant category codes would make essentials easy, but many Indian merchants take payments on personal UPI IDs, so the codes are often missing or wrong. Essentials are recognised three ways: the code when it exists, a merchant directory that learns from payments made in the app, and payees you tag yourself, like your landlord. A tagged payee has an expected amount, a tolerance and a day window, so a second "rent" payment in the same month doesn't slip through.</p>
+    </section>
+
+    <section>
+      <h2>The colour</h2>
+      <p>The app has two colour drains and shows whichever is greyer. Text and numbers keep full contrast in both.</p>
+      <div class="formula">monthly: 100% colour up to 100% of the month's budget, 0% at 130%   (lasts until payday)
+daily:   100% colour up to 100% of today's limit,     0% at 200%   (resets at midnight)
+shown:   min(monthly, daily)</div>
+    </section>
+
+    <section>
+      <h2>The roll</h2>
+      <p>If a payment puts you over today's limit while the month is still fine, it's decided by chance. The odds get worse the further over you go and the faster you're spending this month. The draw happens on the server, and the result sticks for the same payee for 30 minutes, so retrying doesn't help.</p>
+      <div class="formula">d = today after payment ÷ daily limit
+c = month after payment ÷ expected spend by today
+
+chance of a block = 0.30 + 0.50 × min(d − 1, 1) + 0.20 × clamp((c − 0.8) ÷ 0.4, 0, 1)
+kept between 30% and 95%, plus 5% for each bypass this month</div>
+    </section>
+
+    <section>
+      <h2>Getting caught, fairly</h2>
+      <div class="grid">
+        <div class="card"><h3>Evidence first</h3><p>Every catch names the SMS or bank record it came from, and lists what it will cost before anything happens.</p></div>
+        <div class="card"><h3>Ask when unsure</h3><p>Payments to people and wallet top-ups get a question, never a roast. No answer in 24 hours counts as a yes.</p></div>
+        <div class="card"><h3>Disputes win</h3><p>Disputes are accepted on the spot. If one can be verified, the streak, extra questions and worse odds are all reversed.</p></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Where the jokes stop</h2>
+      <div class="grid">
+        <div class="card"><h3>Fraud</h3><p>"I didn't make this" switches off the personality. The screen points to your bank, the 1930 cybercrime helpline and cybercrime.gov.in, and can block UPI instantly.</p></div>
+        <div class="card"><h3>Hard months</h3><p>Payments to loan apps or a balance near zero before payday switch the app to a supportive tone. The monthly recap drops the roasts and the share button.</p></div>
+        <div class="card"><h3>Privacy</h3><p>The lock screen only ever says "I saw that." Share cards show percentages and counts, never amounts, merchants or names.</p></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Rules that close loopholes</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Loophole</th><th>Rule</th></tr></thead>
+          <tbody>
+            <tr><td>Raise the limit to get past a block</td><td>Anything that loosens the plan, including a raise, applies from the next cycle.</td></tr>
+            <tr><td>Split one payment into small ones</td><td>The check uses today's and the month's running totals.</td></tr>
+            <tr><td>Revoke the app's access</td><td>That's a bypass. With no data source left, payments are disabled until you relink, then everything missed is checked.</td></tr>
+            <tr><td>Keep a second bank account quiet</td><td>Account Aggregator finds accounts under your phone number. One left unlinked for a week gets flagged.</td></tr>
+            <tr><td>Withdraw cash, then spend it</td><td>Cash counts as spent at the ATM.</td></tr>
+            <tr><td>Confess the same spend twice</td><td>Duplicate check by UPI reference, image and amount, in both directions.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  var fmt = function (n) { return Math.round(Math.abs(n)).toLocaleString('en-IN'); };
+  var rs = function (n) { return (n < 0 ? '−₹' : '₹') + fmt(n); };
+  var MEME = { 69: 'Nice.', 420: "Nice number. Don't get ideas.", 80085: '80085? Grow up.', 69420: 'Peak internet. Respect.', 1337: 'Leet. Still over budget though.', 404: 'Budget not found.', 42: 'The answer to everything. Not to your budget.', 9001: "It's over 9000!", 666: 'Ominous.', 1234: "Please tell me that's not your PIN.", 8008: 'Half of 80085. Still immature.' };
+  var MERCHANTS = [
+    { name: 'Swiggy', upi: 'swiggy@icici', amt: 450, initial: 'S' },
+    { name: 'Chai Point', upi: 'chaipoint@ybl', amt: 60, initial: 'C' },
+    { name: 'Apollo Pharmacy', upi: 'apollo@hdfc', amt: 320, initial: 'A', essential: true },
+    { name: 'Croma', upi: 'croma@axis', amt: 18000, initial: 'C' }
+  ];
+  var MODES = ['home', 'log', 'recap', 'me'];
+  var LIMIT = 1200, SPENDABLE = 36000, DAY = 15, DAYS = 30;
+  var S;
+
+  function fresh() {
+    return {
+      screen: 'home', mode: 0, today: 780, cycle: 18400, essentials: 800, streak: 12,
+      kept: 0, keptCount: 0, blocks: 0, overrides: 0, bypasses: 0, confessCount: 0,
+      pending: true, payee: null, path: '', rollCache: {}, rollResult: null, spinning: false,
+      q: 0, answers: [], typed: '', confessAmt: '69', rc: 0, toast: '', forceRoll: null,
+      history: [
+        { name: 'Swiggy', amt: 400, tag: 'paid here' },
+        { name: 'Uber', amt: 320, tag: 'caught' },
+        { name: 'Chai Point', amt: 60, tag: 'paid here' },
+        { name: 'Apollo Pharmacy', amt: 800, tag: 'essential' }
+      ]
+    };
+  }
+  S = fresh();
+
+  // ---------- budget maths ----------
+  function sat() {
+    var d = S.today / LIMIT, c = S.cycle / SPENDABLE;
+    var ds = d <= 1 ? 1 : Math.max(0, 1 - (d - 1));
+    var ms = c <= 1 ? 1 : Math.max(0, 1 - (c - 1) / 0.3);
+    return Math.min(ds, ms);
+  }
+  function homeMsg() {
+    var p = S.today / LIMIT;
+    if (S.cycle > SPENDABLE * 1.3) return 'Welcome to the Upside Down.';
+    if (S.cycle > SPENDABLE) return "We're over for the month. I've started losing my colour. This is on you.";
+    if (p < 0.5) return "Look at you. Saving money like it's a sport.";
+    if (p < 0.8) return "Steady. I'm proud. Don't make it weird.";
+    if (p <= 1) return 'Most of today gone. Cool cool cool.';
+    if (p < 1.4) return 'I know what you bought. I always know.';
+    if (p < 2) return 'Houston, we have a problem.';
+    return 'Welcome to the Upside Down.';
+  }
+  function odds(amt) {
+    var d = (S.today + amt) / LIMIT;
+    var c = (S.cycle + amt) / (SPENDABLE * DAY / DAYS);
+    var p = 0.30 + 0.50 * Math.min(d - 1, 1) + 0.20 * Math.max(0, Math.min(1, (c - 0.8) / 0.4)) + 0.05 * S.bypasses;
+    return Math.max(0.30, Math.min(0.95, p));
+  }
+  function gate(m) {
+    if (m.essential) return 'essential';
+    if (S.cycle + m.amt > SPENDABLE) return 'cycle';
+    if (S.today + m.amt > LIMIT) return 'roll';
+    if (S.today + m.amt >= LIMIT * 0.8 || S.cycle + m.amt >= SPENDABLE * 0.8) return 'warn';
+    return 'clear';
+  }
+  function spend(name, amt, tag) {
+    if (tag === 'essential') { S.essentials += amt; } else { S.today += amt; S.cycle += amt; }
+    S.history.unshift({ name: name, amt: amt, tag: tag });
+  }
+
+  // ---------- narrator ----------
+  var N = {
+    home: ['Home', 'The big number is what you can still spend today. Payments from any app come off it. Go over, and the whole app starts losing its colour.', 'Try it: tap <b>Scan</b> and pay ₹450 to Swiggy.'],
+    log: ['Log', 'Everything you spent, tagged by where the app found it: paid here, caught on another app, confessed, or essential.', 'Turn the <b>dial</b> again for the monthly recap.'],
+    scan: ['Pay', 'Pick a QR code to scan. The pharmacy is an essential, so it is never blocked. The ₹18,000 one would break the month.', 'Pick <b>Swiggy</b>.'],
+    amount: ['Before you pay', 'You see what is left today before you confirm. Under 80% of the limit, a payment goes straight through.', ''],
+    warn: ['Getting close', 'Between 80% and 100% of the limit you get one line of warning and have to slide instead of tap. Nothing more.', 'Slide to pay.'],
+    roll: ['The roll', 'This payment puts you over for today, but the month is fine, so it is down to chance. The further over you go and the faster you spend this month, the worse the odds.', 'Tap <b>Spin</b>.'],
+    blocked: ['Blocked', 'The payment stops here. Keep the money, or hold the second button and answer a few questions to pay anyway. The app cannot refuse at the end. It only makes you think first.', 'Hold <b>Hold to argue</b> for a second.'],
+    kept: ['Kept', 'Walking away is the result the app wants, so it gets celebrated and counted for the end of the month.', ''],
+    q: ['The argument', 'The questions come from your history and your savings goals. Answers cannot be wrong. Every bypass this month adds another question.', ''],
+    summary: ['Last look', 'One screen with the full cost before the PIN.', ''],
+    pin: ['PIN', 'In the real app this is the NPCI PIN screen. Here it fills itself in.', ''],
+    success: ['Paid', 'The reaction depends on how you got here: straight through, after a warning, lucky on the roll, or after an argument.', ''],
+    caught: ['Caught', 'You paid on another app while over budget. The bank SMS arrived within seconds. Every catch shows its evidence and what it will cost. On the lock screen it only says "I saw that."', 'Tap <b>That\'s not right</b> to see disputes.'],
+    dispute: ['Disputes', 'Disputes are accepted on the spot. When one can be verified, everything the catch took away comes back.', ''],
+    fraud: ['Fraud mode', 'The one screen with no jokes. It points to your bank and the 1930 cybercrime helpline, and can block UPI immediately.', ''],
+    clarify: ['Ask first', 'A payment to a person could be anything, so the app asks before it judges. No answer in 24 hours counts as a yes.', ''],
+    confess: ['Confess', 'For spending the app missed. Confess before it catches you and your streak survives. Exact amounts like 69 or 420 get a sticker.', 'Type <b>420</b>, then press record.'],
+    recap: ['The month', 'On payday you get a short story of the month. You have to see the verdict before you can use the app again. Share cards never show amounts.', 'Tap the card to move on.'],
+    me: ['The contract', 'The contract from setup, stamped with how this month is going. Settings hold facts about your life. Tone, colours and the dial cannot be changed.', 'Turn the <b>dial</b> to get back home.']
+  };
+  var lastTitle = null;
+  function swap(el) { el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap'); }
+  function narrate() {
+    var k = S.screen;
+    var n = N[k] || N.home;
+    if (lastTitle !== null && lastTitle !== n[0]) swap(document.getElementById('narrator'));
+    lastTitle = n[0];
+    document.getElementById('n-eyebrow').textContent = "You're on · " + n[0];
+    document.getElementById('n-title').textContent = n[0];
+    document.getElementById('n-body').textContent = n[1];
+    var t = document.getElementById('n-try');
+    t.innerHTML = n[2];
+    t.hidden = !n[2];
+    var jumpKey = { home: 'home', log: 'home', scan: 'scan', amount: 'scan', warn: 'scan', pin: 'scan', success: 'scan', roll: 'roll', blocked: 'blocked', kept: 'blocked', q: 'blocked', summary: 'blocked', caught: 'caught', dispute: 'caught', fraud: 'caught', clarify: 'caught', confess: 'confess', recap: 'recap', me: 'me' }[k];
+    document.querySelectorAll('.chip').forEach(function (c) { c.classList.toggle('on', c.dataset.jump === jumpKey); });
+  }
+
+  // ---------- screens ----------
+  var flame = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFDBC8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-3 2-4 2-6 2 1 3 3 3 3"/></svg>';
+  var scanIcon = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#522300" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/></svg>';
+  function back(label) { return '<button type="button" class="back" data-a="home">← ' + (label || 'Home') + '</button>'; }
+  function sticker(n) { return MEME[n] ? '<span class="sticker">' + MEME[n] + '</span>' : ''; }
+  function avatar(m) { return '<span class="avatar">' + m.initial + '</span>'; }
+
+  function dock() {
+    var mode = MODES[S.mode];
+    var labels = [['Home', 'top:0;left:50%;transform:translateX(-50%)'], ['Log', 'right:0;top:50%;transform:translateY(-50%)'], ['Recap', 'bottom:0;left:50%;transform:translateX(-50%)'], ['Me', 'left:2px;top:50%;transform:translateY(-50%)']];
+    var lbl = labels.map(function (l, i) { return '<span class="lbl' + (i === S.mode ? ' on' : '') + '" style="' + l[1] + '">' + l[0] + '</span>'; }).join('');
+    return '<div class="dock" data-t="dock">' +
+      '<div class="dockcol"><button type="button" class="fab small" data-a="confess" aria-label="Confess"><span style="width:16px;height:16px;border-radius:8px;background:#FFDBC8;display:block"></span></button>Confess</div>' +
+      '<button type="button" class="dial" data-a="dial" data-t="dial" aria-label="Mode dial, now on ' + mode + '. Turn to switch.">' + lbl + '<span class="knob" style="transform:rotate(' + (S.mode * 90) + 'deg)"></span></button>' +
+      '<div class="dockcol"><button type="button" class="fab" data-a="scan" aria-label="Scan to pay">' + scanIcon + '</button>Scan</div>' +
+      '</div>';
+  }
+
+  function home() {
+    var left = LIMIT - S.today;
+    var paid = 0, caught = 0, conf = 0;
+    S.history.forEach(function (h) { if (h.tag === 'paid here') paid += h.amt; else if (h.tag === 'caught') caught += h.amt; else if (h.tag === 'confessed') conf += h.amt; });
+    var tot = Math.max(LIMIT, paid + caught + conf);
+    var w = function (v) { return (v / tot * 100).toFixed(1) + '%'; };
+    var pace = S.cycle / (SPENDABLE * DAY / DAYS);
+    var paceLbl = S.cycle > SPENDABLE ? 'over' : pace < 0.9 ? 'ahead of pace' : pace <= 1.1 ? 'on pace' : 'running hot';
+    var meme = MEME[left] ? left : null;
+    return '<div class="row"><span class="cap">Friday, 3 Oct</span><span class="chip-s">' + flame + S.streak + ' days</span></div>' +
+      '<span class="cap" style="margin-top:8px">' + (left >= 0 ? 'Left today' : 'Over today') + '</span>' +
+      '<div class="bigrow" data-t="big"><span class="big">' + rs(left) + '</span>' + (meme ? '<span class="sticker">' + MEME[meme].toLowerCase() + '</span>' : '') + '</div>' +
+      '<div class="bar" data-t="bar"><span style="width:' + w(paid) + ';background:#FFB68A"></span><span style="width:' + w(caught) + ';background:#FFDBC8"></span><span style="width:' + w(conf) + ';background:#D9773A"></span><span style="flex:1;background:#3F2C22"></span></div>' +
+      '<div class="row cap"><span>' + rs(S.today) + ' spent</span><span>₹1,200 limit</span></div>' +
+      '<p class="msg">' + homeMsg() + '</p>' +
+      '<div class="cards"><div class="pc strong"><span>This cycle</span><b>' + rs(S.cycle) + '</b><span>of ₹36,000 · ' + paceLbl + '</span></div><div class="pc soft"><span>Essentials</span><b>' + rs(S.essentials) + '</b><span>never judged</span></div></div>' +
+      (S.pending ? '<button type="button" class="pending" data-a="clarify"><span class="avatar">R</span><span style="flex:1">₹2,000 to Rahul. Who\'s Rahul?</span><span class="pill">Answer</span></button>' : '') +
+      dock();
+  }
+
+  function log() {
+    var rows = S.history.map(function (h) { return '<div><span>' + h.name + ' <span class="tag">' + h.tag + '</span></span><b>' + rs(h.amt) + '</b></div>'; }).join('');
+    return '<div class="row"><span class="hdr">Log</span><span class="cap">Today</span></div>' +
+      '<div class="list" style="max-height:440px;overflow:auto">' + rows + '</div>' + dock();
+  }
+
+  function scan() {
+    var list = MERCHANTS.map(function (m, i) {
+      return '<button type="button" class="merchant" data-a="pick" data-i="' + i + '">' + avatar(m) + '<span>' + m.name + '<small>' + (m.essential ? 'essential · ' : '') + m.upi + '</small></span><span class="amt">' + rs(m.amt) + '</span></button>';
+    }).join('');
+    return back() + '<span class="hdr">Scan a QR</span><div class="qr">Point at a QR code</div><span class="cap">Or pick one for the demo</span><div class="opts" data-t="merchants">' + list + '</div>';
+  }
+
+  function payeeHead(m) {
+    return '<div class="row"><span style="display:flex;gap:10px;align-items:center">' + avatar(m) + '<span style="display:flex;flex-direction:column;line-height:1.2"><b style="font-size:15px">' + m.name + '</b><span class="cap">' + m.upi + '</span></span></span></div>';
+  }
+  function amount(warnMode) {
+    var m = S.payee;
+    var after = LIMIT - S.today - (m.essential ? 0 : m.amt);
+    var warnLine = warnMode ? '<p class="msg" style="background:#4A2A18;color:#FFDBC8;border-radius:14px;padding:10px 12px">That leaves ' + rs(after) + ' for the rest of today. Bold.</p>' : '';
+    var action = warnMode
+      ? '<input type="range" class="slide" data-a="slide" min="0" max="100" value="0" aria-label="Slide to pay"><div class="slidelabel">Slide to pay</div>'
+      : '<button type="button" class="pbtn primary" data-a="pay">Pay ' + rs(m.amt) + '</button>';
+    return back('Cancel') + payeeHead(m) +
+      '<div style="margin-top:36px;text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center"><span class="big" style="font-size:72px">' + rs(m.amt) + '</span>' + sticker(m.amt) + '</div>' +
+      '<p class="cap" style="text-align:center">' + (m.essential ? 'Essential. Never judged.' : 'Left today after this: ' + rs(LIMIT - S.today) + ' → ' + rs(after)) + '</p>' +
+      warnLine + '<div class="stack" data-t="payaction">' + action + '</div>';
+  }
+
+  function roll() {
+    var m = S.payee;
+    var p = odds(m.amt);
+    var over = S.today + m.amt - LIMIT;
+    var res = S.rollResult;
+    var resLine = res ? '<p class="msg" style="text-align:center;font-weight:800;font-size:16px">' + (res === 'block' ? 'BLOCK. Sorry, not sorry.' : "ALLOW. Lucky. Don't push it.") + '</p>' : '';
+    var btn = !res ? '<button type="button" class="pbtn primary" data-a="spin"' + (S.spinning ? ' disabled' : '') + '>Spin</button>'
+      : res === 'block' ? '<button type="button" class="pbtn primary" data-a="toblocked">Continue</button>'
+      : '<button type="button" class="pbtn primary" data-a="pay">Pay ' + rs(m.amt) + '</button>';
+    return back('Cancel') + payeeHead(m) +
+      '<p class="msg" style="margin-top:6px">You\'d be ' + rs(over) + ' over today. The month\'s fine though. Let\'s leave it to fate.</p>' +
+      '<span class="odds">' + Math.round(p * 100) + '% chance I say no.</span>' +
+      '<div class="rollwrap" data-t="wheel"><div class="pointer" aria-hidden="true"></div><div class="wheel" id="wheel" aria-hidden="true" style="transform:rotate(' + (S.wheelDeg || 0) + 'deg)"><span class="a">ALLOW</span><span class="b">BLOCK</span><span class="hub"></span></div></div>' +
+      resLine + '<div class="stack">' + btn + '</div>';
+  }
+
+  function blocked() {
+    var m = S.payee;
+    var why = S.path === 'cycle' ? 'This would take the month past its budget. No roll for that.' : "I'm not saying anything. I'm just counting.";
+    return payeeHead(m) +
+      '<div style="margin-top:14px;display:flex;flex-direction:column;gap:6px">' +
+      '<span style="width:52px;height:52px;border-radius:17px;background:#723600;display:grid;place-items:center;transform:rotate(-6deg)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFDBC8" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg></span>' +
+      '<span class="eyebrow" style="font-size:11px;margin-top:4px">Vetoed</span>' +
+      '<span class="stampin" style="font-size:96px;font-weight:800;letter-spacing:-0.06em;line-height:0.85;display:inline-block;transform-origin:left center">No.</span>' +
+      '<span style="font-size:19px;font-weight:800;color:#FFB68A">You shall not pass.</span></div>' +
+      '<div class="cards three"><div class="pc soft"><span>Today after</span><b>' + rs(S.today + m.amt) + '</b><span>of ₹1,200</span></div><div class="pc soft"><span>Month after</span><b>' + Math.round((S.cycle + m.amt) / SPENDABLE * 100) + '%</b><span>of budget</span></div><div class="pc strong"><span>Kept so far</span><b>' + S.keptCount + '×</b><span>this cycle</span></div></div>' +
+      '<p class="msg">' + why + '</p>' +
+      '<div class="stack"><button type="button" class="pbtn primary" data-a="keep">Keep my money</button>' +
+      '<button type="button" class="pbtn ghost holdbtn" data-a="hold" data-t="hold"><span class="fill"></span><span>Hold to argue · ' + qCount() + ' questions</span></button></div>';
+  }
+
+  function kept() {
+    return '<div style="margin-top:80px;display:flex;flex-direction:column;gap:10px">' +
+      '<span class="cap">Payment cancelled</span><span class="big">' + rs(S.payee.amt) + ' kept.</span>' +
+      '<p class="msg" style="font-size:18px;font-weight:700">I\'m so proud I could cry.</p>' +
+      '<div class="list" style="margin-top:12px"><div><span>Kept by me this cycle</span><b>' + rs(S.kept) + '</b></div><div><span>Times I stopped you</span><b>' + S.keptCount + '</b></div></div></div>' +
+      '<div class="stack"><button type="button" class="pbtn primary" data-a="home">Back to home</button></div>';
+  }
+
+  function qCount() { return Math.min(3 + S.bypasses + S.overrides, 5); }
+  function questions() {
+    var m = S.payee;
+    var all = [
+      { t: 'Need or want? Be honest. I\'ll know.', a: ['Need', 'Want', 'Somewhere in between'] },
+      { t: 'What happens if this waits until tomorrow, when you\'ll have ₹1,200 again?', a: ['Nothing really', 'It\'ll be gone', 'It\'s urgent'] },
+      { t: 'This takes ' + rs(m.amt) + ' out of your Goa trip fund. Still worth it?', a: ['Worth it', 'Ouch'] },
+      { t: 'Third time on ' + m.name + ' today. Thoughts?', a: ['I know', 'Different order', 'No comment'] },
+      { t: 'Type this to continue:', typed: 'I choose ' + m.name + ' over Goa.' }
+    ];
+    return all.slice(0, qCount());
+  }
+  function q() {
+    var qs = questions(), i = S.q, cur = qs[i];
+    var dots = qs.map(function (_, k) { return '<i class="' + (k <= i ? 'on' : '') + '"></i>'; }).join('');
+    var body = cur.typed
+      ? '<p class="msg" style="font-weight:700">"' + cur.typed + '"</p><label class="cap" for="typed">Type it exactly</label><input class="typed" id="typed" data-a="typed" autocomplete="off" value="' + S.typed.replace(/"/g, '&quot;') + '">'
+      : '<div class="ans">' + cur.a.map(function (a) { return '<button type="button" data-a="ans" data-v="' + a + '" class="' + (S.answers[i] === a ? 'on' : '') + '">' + a + '</button>'; }).join('') + '</div>';
+    var ready = cur.typed ? S.typed.trim().toLowerCase() === cur.typed.toLowerCase() : !!S.answers[i];
+    return '<div class="row"><div class="dots">' + dots + '</div><button type="button" class="back" data-a="giveup">Fine, you win</button></div>' +
+      '<span class="cap" style="margin-top:20px">Question ' + (i + 1) + ' of ' + qs.length + '</span>' +
+      '<span class="qtext">' + cur.t + '</span>' + body +
+      '<div class="stack"><button type="button" class="pbtn primary" data-a="qnext"' + (ready ? '' : ' disabled') + '>Next</button><button type="button" class="pbtn ghost" data-a="giveup">Fine, you win</button></div>';
+  }
+
+  function summary() {
+    var m = S.payee;
+    return '<span class="hdr" style="margin-top:8px">You\'re about to pay</span>' +
+      '<div class="list"><div><span>' + m.name + '</span><b>' + rs(m.amt) + '</b></div><div><span>Today</span><b>' + rs(S.today + m.amt) + ' / ₹1,200</b></div><div><span>Month</span><b>' + Math.round((S.cycle + m.amt) / SPENDABLE * 100) + '%</b></div><div><span>Goa trip fund</span><b>−' + rs(m.amt) + '</b></div></div>' +
+      '<p class="msg">Fine. I can\'t stop you. I\'m writing it down though.</p>' +
+      '<div class="stack"><input type="range" class="slide" data-a="slide" min="0" max="100" value="0" aria-label="Slide to pay anyway"><div class="slidelabel">Slide to pay anyway</div><button type="button" class="pbtn ghost" data-a="giveup">Fine, you win</button></div>';
+  }
+
+  function pin() {
+    return '<span class="hdr" style="margin-top:40px;text-align:center">Enter UPI PIN</span><span class="cap" style="text-align:center">' + rs(S.payee.amt) + ' to ' + S.payee.name + '</span>' +
+      '<div class="pin" id="pin"><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="cap" style="text-align:center">Demo. This fills itself in.</span>';
+  }
+
+  function success() {
+    var m = S.payee;
+    var line = { clear: 'Done. Responsible. Who are you?', warn: 'Paid. Tread lightly.', roll: "Paid. Fate liked you this time. Don't push it.", override: "Fine. It's done. I'm not mad. I'm writing it down though.", essential: 'Paid. Never judged.' }[S.path] || 'Paid.';
+    return '<div style="margin-top:70px;display:flex;flex-direction:column;gap:10px;align-items:flex-start">' +
+      '<span class="pop" style="width:56px;height:56px;border-radius:28px;background:#FFB68A;display:grid;place-items:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#522300" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg></span>' +
+      '<span class="big" style="font-size:56px">' + rs(m.amt) + '</span>' + sticker(m.amt) + '<span class="cap">to ' + m.name + '</span>' +
+      '<p class="msg" style="font-size:17px;font-weight:700;margin-top:8px">' + line + '</p>' +
+      '<div class="list" style="width:100%"><div><span>Left today</span><b>' + rs(LIMIT - S.today) + '</b></div></div></div>' +
+      '<div class="stack"><button type="button" class="pbtn primary" data-a="home">Done</button></div>';
+  }
+
+  function caught() {
+    var n = S.bypasses;
+    var line = n <= 1 ? 'I saw that.' : n === 2 ? 'Twice now. I\'m noticing a pattern.' : 'That\'s ' + n + '. I\'ve started a folder.';
+    return '<span class="eyebrow" style="font-size:11px">Caught · ' + n + (n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th') + ' this cycle</span>' +
+      '<span class="big" style="font-size:56px;margin-top:6px">₹840</span><span class="cap">Zomato · via PhonePe · 14:02</span><span class="cap" style="color:#A08A7E">Seen in your HDFC SMS</span>' +
+      '<p class="msg" style="font-size:18px;font-weight:800;margin-top:6px">"' + line + '"</p>' +
+      '<div class="list" data-t="cost"><div><span>Streak</span><b>' + (S.lastStreak || 12) + ' → 0</b></div><div><span>Next override</span><b>+1 question</b></div><div><span>Roll odds</span><b>+5%</b></div><div><span>Colour now</span><b>' + Math.round(sat() * 100) + '%</b></div></div>' +
+      '<div class="stack"><button type="button" class="pbtn primary" data-a="home">Guilty</button><button type="button" class="pbtn ghost" data-a="dispute">That\'s not right</button></div>';
+  }
+  function dispute() {
+    var o = [['self', 'Sent to myself'], ['essential', "It's essential"], ['refund', 'A refund is coming'], ['fraud', "I didn't make this"]];
+    return '<button type="button" class="back" data-a="caughtback">← Back</button><span class="hdr">What happened?</span><span class="cap">₹840 · Zomato · via PhonePe</span>' +
+      '<div class="opts">' + o.map(function (x) { return '<button type="button" class="opt" data-a="disp" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+      '<p class="cap" style="margin-top:auto">I take your word for it now. If I can verify it, everything goes back to how it was.</p>';
+  }
+  function fraud() {
+    return '<span class="hdr" style="margin-top:20px">Okay. Let\'s sort this out.</span><p class="msg">This payment is now left out of your budget while you deal with it.</p>' +
+      '<div class="opts"><div class="opt">Call HDFC fraud support</div><div class="opt">Cybercrime helpline: 1930</div><div class="opt">Report at cybercrime.gov.in</div><div class="opt">Block UPI on this app</div></div>' +
+      '<div class="list"><div><span>Reference</span><b class="mono" style="font-size:12px">4127 8890 1123</b></div><div><span>Amount</span><b>₹840</b></div></div>' +
+      '<div class="stack"><button type="button" class="pbtn primary" data-a="home">Done</button></div>';
+  }
+  function clarify() {
+    var o = [['split', 'Split bill or paying back'], ['self', 'Sent to myself'], ['essential', 'Essential (rent, family, medical)'], ['me', 'Yes, it was me']];
+    return back() + '<span class="cap" style="margin-top:12px">Yesterday · via Google Pay</span><span class="big" style="font-size:56px">₹2,000</span><span class="hdr">to Rahul. Who\'s Rahul?</span>' +
+      '<div class="opts" style="margin-top:8px">' + o.map(function (x) { return '<button type="button" class="opt" data-a="clar" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+      '<p class="cap" style="margin-top:auto">No answer in 24 hours counts as "Yes, it was me."</p>';
+  }
+
+  function confess() {
+    var v = Number(S.confessAmt || 0);
+    var keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'del'];
+    return '<div class="row"><span class="hdr">Confess</span><button type="button" class="back" data-a="home">Close</button></div>' +
+      '<div style="background:#2A1D17;border-radius:22px;padding:14px;display:flex;flex-direction:column;gap:8px" data-t="camt">' +
+      '<div class="row"><svg width="44" height="44" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="26" fill="#723600"/><circle cx="28" cy="28" r="7" fill="none" stroke="#FFDBC8" stroke-width="2.5"/><path d="M28 6v10M28 40v10M6 28h10M40 28h10" stroke="#FFDBC8" stroke-width="2.5" stroke-linecap="round"/></svg><span style="flex:1;height:2px;background:#5A4337"></span><svg width="44" height="44" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="26" fill="#4A2A18"/><circle cx="28" cy="28" r="18" fill="none" stroke="#5E3720" stroke-width="8"/><circle cx="28" cy="28" r="7" fill="none" stroke="#FFDBC8" stroke-width="2.5"/></svg></div>' +
+      '<span style="color:#FFB68A;font-weight:700;font-size:13px">Go ahead. Make my day.</span>' +
+      '<div class="row" style="align-items:flex-end">' + (MEME[v] ? '<span class="sticker">' + MEME[v] + '</span>' : '<span></span>') + '<span style="font-size:44px;font-weight:800;letter-spacing:-0.04em;line-height:1">' + rs(v) + '</span></div></div>' +
+      '<div class="seg" aria-hidden="true"><span class="on">Keypad</span><span>Screenshot</span><span>Cash</span></div>' +
+      '<div class="keys">' + keys.map(function (k) { return '<button type="button" data-a="key" data-k="' + k + '"' + (k === 'del' ? ' aria-label="Delete" style="background:#4A2A18"' : '') + '>' + (k === 'del' ? '⌫' : k) + '</button>'; }).join('') + '</div>' +
+      '<div class="dock"><span class="cap" style="max-width:62%">Confess before I catch it and your streak stays safe.</span><button type="button" class="fab" data-a="rec" aria-label="Record confession" style="background:#FFDBC8"><span style="width:20px;height:20px;border-radius:10px;background:#522300;display:block"></span></button></div>';
+  }
+
+  function recap() {
+    var cards = [
+      '<span class="cap">October · the verdict</span><span class="hugenum">84%</span><p class="msg" style="font-size:18px;font-weight:700">of your savings goal. We\'ll call it a soft launch.</p>',
+      '<span class="cap">Kept by me</span><span class="hugenum">' + Math.max(S.keptCount, 11) + '×</span><p class="msg" style="font-size:18px;font-weight:700">I stopped you ' + Math.max(S.keptCount, 11) + ' times. You\'re welcome.</p>',
+      '<span class="cap">Behind my back</span><span class="hugenum">' + Math.max(S.bypasses, 3) + '</span><p class="msg" style="font-size:18px;font-weight:700">Favourite getaway: PhonePe. I\'m hurt.</p>',
+      '<span class="cap">This month you were</span><span class="title" data-t="title">The Midnight Negotiator</span><p class="msg">Argued your way past me 5 times, all after 11pm. You said "need" four times. I have notes.</p><span class="cap" style="margin-top:auto">Share card: no amounts, ever.</span>',
+      '<span class="cap">New cycle</span><span class="title" style="color:#F3DED3">Fresh month. Full colour.</span><p class="msg" style="font-size:16px;font-weight:700">Don\'t make me regret this.</p>'
+    ];
+    var i = S.rc;
+    var bars = cards.map(function (_, k) { return '<i class="' + (k <= i ? 'on' : '') + '" style="flex:1"></i>'; }).join('');
+    var last = i === cards.length - 1;
+    return '<button type="button" class="story" data-a="rcnext" aria-label="' + (last ? 'Back to home' : 'Next card') + '"><div class="dots" style="width:100%">' + bars + '</div>' + cards[i] +
+      '<span class="cap" style="margin-top:auto">' + (last ? 'Tap to go home' : 'Tap for the next card') + '</span></button>';
+  }
+
+  function me() {
+    var stamps = '<span class="stamp" style="right:8px;top:30px;transform:rotate(-8deg)">BLOCKED ×' + (S.blocks + 11) + '</span>' +
+      '<span class="stamp" style="right:16px;top:64px;transform:rotate(5deg)">ARGUED ×' + (S.overrides + 5) + '</span>' +
+      '<span class="stamp" style="right:6px;top:136px;transform:rotate(-6deg)">' + (S.bypasses ? 'BROKEN ×' + (S.bypasses + 2) : 'BROKEN ×2') + '</span>' +
+      '<span class="stamp kept" style="right:12px;bottom:12px;transform:rotate(4deg)">KEPT</span>';
+    var cls = ['When I hit my limit, you can block my payments.', 'If I pay anyway, I\'ll answer honestly.', 'I\'ll link all my accounts.', 'If I sneak around you, you can call me out.', 'I won\'t turn off your access.', 'Essentials: never judged.'];
+    return '<div class="row"><span class="hdr">The contract</span><span class="cap">No. 000001</span></div>' +
+      '<p class="msg" style="color:#FFB68A;font-weight:700">Held together by tape and hope.</p>' +
+      '<div class="receipt">' + cls.map(function (c) { return '<div class="cl"><span class="bx">✓</span><span>' + c + '</span></div>'; }).join('') + stamps + '</div>' +
+      '<div class="list"><div><span>My tone</span><b>You signed for it.</b></div><div><span>My colours</span><b>Earned, not chosen.</b></div><div><span>The dial</span><b>You\'ll get used to it.</b></div></div>' + dock();
+  }
+
+  var VIEWS = { home: home, log: log, scan: scan, amount: function () { return amount(false); }, warn: function () { return amount(true); }, roll: roll, blocked: blocked, kept: kept, q: q, summary: summary, pin: pin, success: success, caught: caught, dispute: dispute, fraud: fraud, clarify: clarify, confess: confess, recap: recap, me: me };
+
+  var scr = document.getElementById('scr');
+  var toastTimer;
+  var REDUCE = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var DEPTH = { home: 0, log: 0, recap: 0, me: 0, scan: 1, amount: 2, warn: 2, roll: 3, blocked: 4, kept: 5, q: 5, summary: 6, pin: 7, success: 8 };
+  var SHEETS = { caught: 1, dispute: 1, fraud: 1, clarify: 1, confess: 1 };
+  var lastScreen = null, lastMode = 0, firstRender = true, shownLeft = null, countRaf = null;
+  function transitionFor(from, to) {
+    if (from === null) return 'in-fwd';
+    if (from === to) return '';
+    if (SHEETS[to]) return 'in-up';
+    if (to === 'recap' && from === 'recap') return 'in-fade';
+    var a = DEPTH[from], b = DEPTH[to];
+    if (a === 0 && b === 0) return S.mode >= lastMode ? 'in-fwd' : 'in-back';
+    if (a === undefined) return 'in-back';
+    return b > a ? 'in-fwd' : b < a ? 'in-back' : 'in-fade';
+  }
+  function shake() {
+    if (REDUCE) return;
+    var w = document.getElementById('device-wrap');
+    w.classList.remove('shake'); void w.offsetWidth; w.classList.add('shake');
+  }
+  function countUp(el, from, to, delay) {
+    cancelAnimationFrame(countRaf);
+    if (REDUCE || from === to) { el.textContent = rs(to); return; }
+    var start = null, dur = 750;
+    el.textContent = rs(from);
+    function step(ts) {
+      if (start === null) start = ts + (delay || 0);
+      var p = Math.max(0, Math.min(1, (ts - start) / dur));
+      var e = 1 - Math.pow(1 - p, 3);
+      el.textContent = rs(Math.round(from + (to - from) * e));
+      if (p < 1) countRaf = requestAnimationFrame(step);
+    }
+    countRaf = requestAnimationFrame(step);
+  }
+  function render() {
+    var cls = transitionFor(lastScreen, S.screen);
+    if (S.screen === 'recap' && lastScreen === 'recap') cls = 'in-fade';
+    scr.innerHTML = '<div class="view ' + cls + '">' + VIEWS[S.screen]() + '</div>' + (S.toast ? '<div class="toast" role="status">' + S.toast + '</div>' : '');
+    var view = scr.firstElementChild;
+    if (firstRender && !REDUCE) view.style.setProperty('--base', '1.35s');
+    Array.prototype.forEach.call(view.children, function (c, i) { c.style.setProperty('--i', Math.min(i, 10)); });
+    if (S.screen === 'home') {
+      var left = LIMIT - S.today, big = scr.querySelector('[data-t="big"] .big');
+      if (big) countUp(big, shownLeft === null ? LIMIT : shownLeft, left, firstRender ? 1500 : 250);
+      shownLeft = left;
+    }
+    if (cls && (S.screen === 'blocked' || S.screen === 'caught')) shake();
+    lastScreen = S.screen; lastMode = S.mode; firstRender = false;
+    var greyAll = S.screen === 'recap' ? (S.rc < 4 ? 0.55 : 1) : sat();
+    scr.style.filter = 'saturate(' + (S.screen === 'fraud' ? 1 : greyAll).toFixed(2) + ')';
+    narrate();
+    if (S.screen === 'pin') runPin();
+    if (S.toast) { clearTimeout(toastTimer); toastTimer = setTimeout(function () { S.toast = ''; var t = scr.querySelector('.toast'); if (t) t.remove(); }, 2600); }
+    if (tour.on) placeSpot();
+  }
+  function go(screen) { S.screen = screen; render(); }
+
+  function runPin() {
+    var dots = scr.querySelectorAll('#pin i'), k = 0;
+    var timer = setInterval(function () {
+      if (S.screen !== 'pin') { clearInterval(timer); return; }
+      if (k < dots.length) { dots[k].classList.add('on'); k++; return; }
+      clearInterval(timer);
+      var m = S.payee;
+      spend(m.name, m.amt, m.essential ? 'essential' : 'paid here');
+      if (S.path === 'override') S.overrides++;
+      go('success');
+    }, 130);
+  }
+
+  function startPay(m) {
+    S.payee = m; S.rollResult = null; S.wheelDeg = 0; S.q = 0; S.answers = []; S.typed = '';
+    var g = gate(m);
+    S.path = g;
+    if (g === 'essential' || g === 'clear') go('amount');
+    else if (g === 'warn') go('warn');
+    else if (g === 'cycle') { S.blocks++; go('blocked'); }
+    else {
+      var cached = S.rollCache[m.name];
+      if (cached) { S.rollResult = cached; S.wheelDeg = cached === 'block' ? 1170 : 990; }
+      go('roll');
+    }
+  }
+
+  function spin() {
+    var m = S.payee;
+    var blockedRes = S.forceRoll ? S.forceRoll === 'block' : Math.random() < odds(m.amt);
+    S.spinning = true; render();
+    var target = blockedRes ? 90 : 270;
+    S.wheelDeg = 1080 + target + (Math.random() * 50 - 25);
+    var wheel = document.getElementById('wheel');
+    requestAnimationFrame(function () { if (wheel) wheel.style.transform = 'rotate(' + S.wheelDeg + 'deg)'; });
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setTimeout(function () {
+      S.spinning = false;
+      S.rollResult = blockedRes ? 'block' : 'allow';
+      S.rollCache[m.name] = S.rollResult;
+      if (blockedRes) S.blocks++;
+      render();
+    }, reduce ? 50 : 2300);
+  }
+
+  function simCaught() {
+    S.lastStreak = S.streak || 12;
+    S.history.unshift({ name: 'Zomato', amt: 840, tag: 'caught' });
+    S.today += 840; S.cycle += 840; S.bypasses++; S.streak = 0;
+    go('caught');
+  }
+
+  // ---------- events ----------
+  var holdTimer = null;
+  scr.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-a]');
+    if (!el || el.disabled) return;
+    var a = el.dataset.a;
+    if (a === 'home') { S.mode = 0; S.payee = S.payee; go('home'); }
+    else if (a === 'scan') go('scan');
+    else if (a === 'confess') { S.confessAmt = ''; go('confess'); }
+    else if (a === 'dial') { S.mode = (S.mode + 1) % 4; if (MODES[S.mode] === 'recap') S.rc = 0; go(MODES[S.mode]); }
+    else if (a === 'pick') startPay(MERCHANTS[Number(el.dataset.i)]);
+    else if (a === 'pay') { if (S.path === 'roll' && S.rollResult === 'allow') S.path = 'roll'; go('pin'); }
+    else if (a === 'spin') spin();
+    else if (a === 'toblocked') go('blocked');
+    else if (a === 'keep' || a === 'giveup') { S.kept += S.payee.amt; S.keptCount++; go('kept'); }
+    else if (a === 'hold' && e.detail === 0) { S.path = 'override'; S.q = 0; go('q'); }
+    else if (a === 'ans') { S.answers[S.q] = el.dataset.v; render(); }
+    else if (a === 'qnext') { if (S.q < questions().length - 1) { S.q++; S.typed = ''; go('q'); } else go('summary'); }
+    else if (a === 'dispute') go('dispute');
+    else if (a === 'caughtback') go('caught');
+    else if (a === 'disp') {
+      var v = el.dataset.v;
+      if (v === 'fraud') { S.today -= 840; S.cycle -= 840; S.bypasses = Math.max(0, S.bypasses - 1); S.streak = S.lastStreak; S.history[0].tag = 'fraud, excluded'; go('fraud'); return; }
+      S.bypasses = Math.max(0, S.bypasses - 1); S.streak = S.lastStreak;
+      if (v === 'self') { S.today -= 840; S.cycle -= 840; S.history[0].tag = 'self-transfer'; S.toast = 'Found it in your other account. My bad. Streak restored.'; }
+      else if (v === 'essential') { S.today -= 840; S.cycle -= 840; S.essentials += 840; S.history[0].tag = 'essential'; S.toast = 'Marked essential. Never judged. Streak restored.'; }
+      else { S.toast = "Holding it for 14 days. If the refund doesn't land, it stays."; }
+      S.mode = 0; go('home');
+    }
+    else if (a === 'clarify') go('clarify');
+    else if (a === 'clar') {
+      var c = el.dataset.v; S.pending = false;
+      S.toast = { split: "Split bill. I'll watch for Rahul paying you back.", self: 'Self-transfer. I\'ll remember that account.', essential: 'Essential. Never judged.', me: 'Thanks for the honesty. Still writing it down.' }[c];
+      if (c === 'me') { S.lastStreak = S.streak; S.bypasses++; S.streak = 0; }
+      S.mode = 0; go('home');
+    }
+    else if (a === 'key') {
+      var k = el.dataset.k;
+      if (k === 'del') S.confessAmt = S.confessAmt.slice(0, -1);
+      else if ((S.confessAmt + k).length <= 6) S.confessAmt = (S.confessAmt + k).replace(/^0+/, '');
+      render();
+    }
+    else if (a === 'rec') {
+      var amt = Number(S.confessAmt || 0);
+      if (!amt) { S.toast = 'Confessing ₹0? Bold, but no.'; render(); return; }
+      spend('Confessed spend', amt, 'confessed'); S.confessCount++;
+      S.toast = (MEME[amt] ? MEME[amt] + ' ' : '') + 'Honesty. Disgusting. I love it.';
+      S.mode = 0; go('home');
+    }
+    else if (a === 'rcnext') { if (S.rc < 4) { S.rc++; render(); } else { S.mode = 0; S.rc = 0; go('home'); } }
+  });
+  scr.addEventListener('input', function (e) {
+    var el = e.target;
+    if (el.dataset.a === 'slide' && Number(el.value) >= 97) { go('pin'); }
+    if (el.dataset.a === 'typed') {
+      S.typed = el.value;
+      var btn = scr.querySelector('[data-a="qnext"]');
+      var cur = questions()[S.q];
+      if (btn && cur.typed) btn.disabled = S.typed.trim().toLowerCase() !== cur.typed.toLowerCase();
+    }
+  });
+  scr.addEventListener('change', function (e) { var el = e.target; if (el.dataset.a === 'slide' && Number(el.value) < 97) el.value = 0; });
+  scr.addEventListener('pointerdown', function (e) {
+    var el = e.target.closest('[data-a="hold"]');
+    if (!el) return;
+    el.classList.add('holding');
+    holdTimer = setTimeout(function () { S.path = 'override'; S.q = 0; go('q'); }, 1200);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) {
+    scr.addEventListener(ev, function () { clearTimeout(holdTimer); var h = scr.querySelector('.holdbtn.holding'); if (h) h.classList.remove('holding'); }, true);
+  });
+
+  // chips
+  function jump(k) {
+    if (k === 'home') { S.mode = 0; go('home'); }
+    else if (k === 'scan') go('scan');
+    else if (k === 'roll') { if (S.today + 450 <= LIMIT) S.today = Math.max(S.today, 780); var m = MERCHANTS[0]; S.payee = m; S.path = 'roll'; S.rollResult = null; S.wheelDeg = 0; delete S.rollCache[m.name]; go('roll'); }
+    else if (k === 'blocked') { S.payee = MERCHANTS[0]; S.path = 'roll'; S.blocks++; go('blocked'); }
+    else if (k === 'caught') simCaught();
+    else if (k === 'confess') { S.confessAmt = '69'; go('confess'); }
+    else if (k === 'recap') { S.mode = 2; S.rc = 0; go('recap'); }
+    else if (k === 'me') { S.mode = 3; go('me'); }
+  }
+  document.getElementById('chips').addEventListener('click', function (e) { var c = e.target.closest('[data-jump]'); if (c) jump(c.dataset.jump); });
+  document.getElementById('reset').addEventListener('click', function () { S = fresh(); render(); });
+
+  // ---------- sizing ----------
+  var device = document.getElementById('device'), wrap = document.getElementById('device-wrap');
+  var MOBILE = window.matchMedia('(max-width: 700px)');
+  function fit() {
+    if (MOBILE.matches) {
+      device.style.transform = '';
+      wrap.style.width = ''; wrap.style.height = '';
+      if (tour.on) placeSpot();
+      return;
+    }
+    var narrow = window.innerWidth <= 900;
+    var availH = narrow ? Infinity : window.innerHeight - 48;
+    var availW = narrow ? window.innerWidth - 32 : wrap.parentElement.clientWidth - 32;
+    var s = Math.min(1, availH / 776, availW / 376);
+    device.style.transform = 'scale(' + s.toFixed(3) + ')';
+    wrap.style.width = (376 * s) + 'px';
+    wrap.style.height = (776 * s) + 'px';
+    if (tour.on) placeSpot();
+  }
+  window.addEventListener('resize', fit);
+
+  // ---------- tour ----------
+  var tour = { on: false, i: 0 };
+  var STEPS = [
+    { title: "What's left today", body: 'This number is what you can still spend today. Every payment comes off it, including ones made in other apps.', target: '[data-t="big"]', setup: function () { S = fresh(); S.toast = ''; go('home'); } },
+    { title: 'Pay for something', body: "Scan works like any UPI app. Let's pay ₹450 to Swiggy.", target: '[data-a="scan"]', setup: function () { S.mode = 0; go('home'); } },
+    { title: 'Over for today, fine for the month', body: 'So it comes down to chance. The odds get worse the further over you go. Press Next to spin. (The tour always loses.)', target: '[data-t="wheel"]', setup: function () { S.forceRoll = 'block'; startPay(MERCHANTS[0]); } },
+    { title: 'Blocked', body: 'Keep the money, or hold this button and answer a few questions to pay anyway. The app cannot refuse at the end. It only makes you think.', target: '[data-t="hold"]', setup: function () { S.payee = MERCHANTS[0]; S.path = 'roll'; if (!S.rollResult) { S.rollResult = 'block'; S.blocks++; } go('blocked'); } },
+    { title: 'Caught', body: 'Paid on PhonePe instead? The bank SMS gives you away within seconds. You see the evidence and exactly what it costs.', target: '[data-t="cost"]', setup: function () { simCaught(); } },
+    { title: 'Confess', body: 'Tell the app about a spend before it finds out, and your streak survives. Some numbers get a sticker.', target: '[data-t="camt"]', setup: function () { S.confessAmt = '69'; go('confess'); } },
+    { title: 'The month', body: 'Every payday ends with a recap and a title made up from your month. Then the colour comes back.', target: '[data-t="title"]', setup: function () { S.mode = 2; S.rc = 3; go('recap'); } }
+  ];
+  var tourCard = document.getElementById('tourcard'), narrator = document.getElementById('narrator'), dim = document.getElementById('tour-dim'), shell = document.getElementById('shell');
+  var spot = document.createElement('div'); spot.className = 'spot'; spot.hidden = true;
+  device.appendChild(spot);
+  function placeSpot() {
+    var st = STEPS[tour.i];
+    var t = st && scr.querySelector(st.target);
+    if (!t) { spot.hidden = true; return; }
+    var sr = scr.getBoundingClientRect(), r0 = t.getBoundingClientRect();
+    if (r0.top < sr.top || r0.bottom > sr.bottom) { scr.scrollTop += r0.top - sr.top - 24; }
+    var dr = device.getBoundingClientRect(), tr = t.getBoundingClientRect();
+    var s = MOBILE.matches ? 1 : dr.width / 376;
+    var bw = parseFloat(getComputedStyle(device).borderLeftWidth) || 0;
+    spot.hidden = false;
+    spot.style.left = ((tr.left - dr.left) / s - bw - 6) + 'px';
+    spot.style.top = ((tr.top - dr.top) / s - bw - 6) + 'px';
+    spot.style.width = (tr.width / s + 12) + 'px';
+    spot.style.height = (tr.height / s + 12) + 'px';
+  }
+  function showStep() {
+    var st = STEPS[tour.i];
+    st.setup();
+    document.getElementById('t-step').textContent = 'Step ' + (tour.i + 1) + ' of ' + STEPS.length;
+    document.getElementById('t-prog').innerHTML = STEPS.map(function (_, k) { return '<i class="' + (k <= tour.i ? 'on' : '') + '"></i>'; }).join('');
+    document.getElementById('t-title').textContent = st.title;
+    document.getElementById('t-body').textContent = st.body;
+    document.getElementById('t-back').disabled = tour.i === 0;
+    document.getElementById('t-next').textContent = tour.i === STEPS.length - 1 ? 'Finish' : 'Next';
+    swap(tourCard);
+    requestAnimationFrame(placeSpot);
+    setTimeout(placeSpot, 650);
+  }
+  function startTour() {
+    tour.on = true; tour.i = 0;
+    setSheet(false);
+    document.body.classList.add('tour-on');
+    dim.hidden = false; tourCard.hidden = false; narrator.hidden = true;
+    document.getElementById('chips').hidden = true; document.getElementById('cta').hidden = true;
+    showStep();
+    document.getElementById('t-next').focus();
+  }
+  function endTour() {
+    tour.on = false; spot.hidden = true; S.forceRoll = null;
+    document.body.classList.remove('tour-on');
+    dim.hidden = true; tourCard.hidden = true; narrator.hidden = false;
+    document.getElementById('chips').hidden = false; document.getElementById('cta').hidden = false;
+    S = fresh(); render();
+    document.getElementById('n-try').innerHTML = "That's the loop. Use the phone yourself, or read how it works <b>under the hood</b>.";
+    document.getElementById('n-try').hidden = false;
+  }
+  document.getElementById('start-tour').addEventListener('click', startTour);
+  document.getElementById('start-tour-m').addEventListener('click', function () { if (!tour.on) startTour(); });
+  var sheetToggle = document.getElementById('sheet-toggle');
+  function setSheet(open) {
+    shell.classList.toggle('sheet-open', open);
+    sheetToggle.textContent = open ? 'Less' : 'More';
+    sheetToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  sheetToggle.addEventListener('click', function () { setSheet(!shell.classList.contains('sheet-open')); });
+  document.getElementById('chips').addEventListener('click', function () { if (MOBILE.matches) setSheet(false); });
+  var sheetEl = document.getElementById('sheet');
+  function syncSheet() { shell.style.setProperty('--sheet-h', sheetEl.offsetHeight + 'px'); if (tour.on) placeSpot(); }
+  if (window.ResizeObserver) new ResizeObserver(syncSheet).observe(sheetEl);
+  syncSheet();
+  window.addEventListener('resize', syncSheet);
+  MOBILE.addEventListener ? MOBILE.addEventListener('change', fit) : MOBILE.addListener(fit);
+  document.getElementById('t-exit').addEventListener('click', endTour);
+  document.getElementById('t-back').addEventListener('click', function () { if (tour.i > 0) { tour.i--; showStep(); } });
+  document.getElementById('t-next').addEventListener('click', function () {
+    if (tour.i === 2 && !S.rollResult) {
+      spin();
+      var btn = this; btn.disabled = true;
+      setTimeout(function () { btn.disabled = false; tour.i++; showStep(); }, 2500);
+      return;
+    }
+    if (tour.i < STEPS.length - 1) { tour.i++; showStep(); } else endTour();
+  });
+  document.addEventListener('keydown', function (e) { if (tour.on && e.key === 'Escape') endTour(); });
+
+  // ---------- views ----------
+  var appView = document.getElementById('app-view'), hoodView = document.getElementById('hood-view');
+  function route() {
+    var hood = location.hash === '#hood';
+    appView.hidden = hood; hoodView.hidden = !hood;
+    if (!hood) fit();
+    window.scrollTo(0, 0);
+  }
+  document.getElementById('to-hood').addEventListener('click', function () { if (tour.on) endTour(); location.hash = 'hood'; });
+  document.getElementById('to-app').addEventListener('click', function () { location.hash = ''; });
+  window.addEventListener('hashchange', route);
+
+  render();
+  route();
+  fit();
+  setTimeout(function () { var b = document.getElementById('boot'); if (b) b.remove(); }, REDUCE ? 0 : 1800);
+})();
+</script>
+
+</body>
+</html>
